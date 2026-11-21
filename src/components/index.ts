@@ -8,3 +8,4 @@ export { Icon, type IconName, type IconProps } from "./Icon";
 export { IconButton } from "./IconButton";
 export { AppBar, type AppBarProps } from "./AppBar";
 export { Section } from "./Section";
+export { TextLink } from "./TextLink";

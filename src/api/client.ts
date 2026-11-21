@@ -25,6 +25,8 @@ export interface RequestOptions {
   signal?: AbortSignal;
   /** Overrides env.apiUrl (tests). */
   baseUrl?: string;
+  /** Access token for endpoints that need a signed-in user (sent as a Bearer token). */
+  token?: string | null;
 }
 
 export const DEFAULT_TIMEOUT_MS = 15_000;
@@ -65,6 +67,7 @@ export async function request<T>(method: HttpMethod, path: string, opts: Request
       headers: {
         Accept: "application/json",
         ...(opts.body !== undefined ? { "Content-Type": "application/json" } : {}),
+        ...(opts.token ? { Authorization: `Bearer ${opts.token}` } : {}),
       },
       body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
       signal: controller.signal,

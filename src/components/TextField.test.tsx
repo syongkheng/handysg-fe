@@ -1,4 +1,6 @@
 import { fireEvent, screen } from "@testing-library/react-native";
+import { createRef, type ComponentRef } from "react";
+import type { TextInput } from "react-native";
 import { StyleSheet } from "react-native";
 import { renderWithTheme } from "@/test/render";
 import { color, size } from "@/theme/tokens.generated";
@@ -74,4 +76,35 @@ describe("TextField", () => {
     expect(inputStyle("Dark")).toMatchObject({ backgroundColor: color.dark.surface, color: color.dark.text });
     expect(screen.getByLabelText("Dark").props.placeholderTextColor).toBe(color.dark.textMuted);
   });
+
+  it("hides a secureToggle field's text until Show is pressed, then Hide hides it again", async () => {
+    await renderWithTheme(<TextField label="Password" secureToggle />);
+    expect(screen.getByLabelText("Password").props.secureTextEntry).toBe(true);
+
+    await fireEvent.press(screen.getByRole("button", { name: "Show password" }));
+    expect(screen.getByLabelText("Password").props.secureTextEntry).toBe(false);
+    expect(screen.getByText("Hide")).toBeOnTheScreen();
+
+    await fireEvent.press(screen.getByRole("button", { name: "Hide password" }));
+    expect(screen.getByLabelText("Password").props.secureTextEntry).toBe(true);
+  });
+
+  it("names the toggle after the field's label", async () => {
+    await renderWithTheme(<TextField label="Confirm password" secureToggle />);
+    expect(screen.getByRole("button", { name: "Show confirm password" })).toBeOnTheScreen();
+  });
+
+  it("has no Show button without secureToggle and keeps the caller's secureTextEntry", async () => {
+    await renderWithTheme(<TextField label="PIN" secureTextEntry />);
+    expect(screen.queryByRole("button", { name: /^Show/ })).toBeNull();
+    expect(screen.getByLabelText("PIN").props.secureTextEntry).toBe(true);
+  });
+
+  it("forwards ref to the underlying TextInput so screens can focus it", async () => {
+    const ref = createRef<ComponentRef<typeof TextInput>>();
+    await renderWithTheme(<TextField label="Password" ref={ref} />);
+    expect(ref.current).not.toBeNull();
+    expect(typeof ref.current?.focus).toBe("function");
+  });
 });
+

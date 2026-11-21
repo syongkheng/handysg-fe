@@ -63,6 +63,31 @@ const glyphs = {
   chevronLeft: <Path d="M15 18l-6-6 6-6" />,
   chevronRight: <Path d="M9 18l6-6-6-6" />,
   check: <Path d="M20 6L9 17l-5-5" />,
+  circle: <Circle cx="12" cy="12" r="9" />,
+  mail: (
+    <>
+      <Rect x="3" y="5" width="18" height="14" rx="2" />
+      <Path d="M3 7l9 6 9-6" />
+    </>
+  ),
+  shield: (
+    <>
+      <Path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      <Path d="M9 12l2 2 4-4" />
+    </>
+  ),
+  checkCircle: (
+    <>
+      <Circle cx="12" cy="12" r="9" />
+      <Path d="M8 12l3 3 5-6" />
+    </>
+  ),
+  alert: (
+    <>
+      <Circle cx="12" cy="12" r="9" />
+      <Path d="M12 8v4M12 16h.01" />
+    </>
+  ),
 } satisfies Record<string, ReactNode>;
 
 export type IconName = keyof typeof glyphs;

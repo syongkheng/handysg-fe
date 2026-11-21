@@ -1,6 +1,6 @@
 import { View } from "react-native";
-import { useSession } from "@/auth/SessionProvider";
-import { AppText, Screen } from "@/components";
+import { useSession, useSessionActions } from "@/auth/SessionProvider";
+import { AppText, Button, Screen } from "@/components";
 import { GuestTab } from "@/features/auth/GuestTab";
 import { AppearancePicker } from "@/features/settings/AppearancePicker";
 import { AppVersion } from "@/features/settings/AppVersion";
@@ -30,6 +30,7 @@ function Settings() {
 
 export default function ProfileScreen() {
   const session = useSession();
+  const { signOut } = useSessionActions();
   if (session.status === "guest") {
     // The version is pinned to the bottom of the screen (7 quick taps open the hidden Diagnostics page).
     return (
@@ -46,6 +47,7 @@ export default function ProfileScreen() {
       </AppText>
       <AppText tone="textMuted">{session.user.username}</AppText>
       <Settings />
+      <Button label="Log out" variant="secondary" onPress={signOut} />
     </Screen>
   );
 }
