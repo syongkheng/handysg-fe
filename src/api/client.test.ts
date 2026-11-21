@@ -115,4 +115,28 @@ describe("request", () => {
     controller.abort();
     await expect(p).rejects.toBe(abortErr);
   });
+
+  it("sends the access token as a Bearer Authorization header when given", async () => {
+    respond(200, { data: [] });
+    await api.get("/address", { token: "access-abc" });
+    expect(fetchMock.mock.calls[0][1].headers).toMatchObject({ Authorization: "Bearer access-abc" });
+  });
+
+  it("sends the token on POST alongside the JSON body", async () => {
+    respond(201, { data: { id: "aZ3kP9qL" } });
+    await api.post("/address", { address: { postalCode: "560123" } }, { token: "access-abc" });
+    const [, init] = fetchMock.mock.calls[0];
+    expect(init.headers).toMatchObject({ Authorization: "Bearer access-abc", "Content-Type": "application/json" });
+    expect(init.body).toBe(JSON.stringify({ address: { postalCode: "560123" } }));
+  });
+
+  it.each([
+    ["no token option", undefined],
+    ["a null token (signed out)", null],
+    ["an empty token", ""],
+  ])("sends no Authorization header with %s", async (_what, token) => {
+    respond(200, { data: null });
+    await api.get("/x", token === undefined ? undefined : { token });
+    expect(fetchMock.mock.calls[0][1].headers.Authorization).toBeUndefined();
+  });
 });

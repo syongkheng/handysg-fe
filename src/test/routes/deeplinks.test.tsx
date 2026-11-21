@@ -13,19 +13,21 @@ describe("Pages opened directly (deep links, no history)", () => {
     getConnectivityMock.mockResolvedValue({ status: "ok", color: "绿", timestamp: "t" });
   });
 
-  it("/login without a reason shows a plain 'Log in' heading", async () => {
+  it("/login without a reason shows a plain 'Log in or sign up' heading", async () => {
     await renderRouter(appRoutes, { initialUrl: "/login" });
-    // Both the app bar title and the page heading read "Log in".
-    expect(await screen.findAllByRole("header", { name: "Log in" })).toHaveLength(2);
+    expect(await screen.findByRole("header", { name: "Log in or sign up" })).toBeOnTheScreen();
     expect(screen.queryByText(/^Log in to /)).toBeNull();
   });
 
-  it("/login 'Back to browsing' goes home when there is nothing to go back to", async () => {
+  it("/login shows a reason the app itself sends", async () => {
     await renderRouter(appRoutes, { initialUrl: "/login?reason=book%20a%20plumber" });
     expect(await screen.findByRole("header", { name: "Log in to book a plumber" })).toBeOnTheScreen();
-    await fireEvent.press(screen.getByRole("button", { name: "Back to browsing" }));
-    expect(await screen.findByRole("header", { name: "What needs fixing?" })).toBeOnTheScreen();
-    expect(screen).toHavePathname("/");
+  });
+
+  it("/login ignores an unknown reason from a link", async () => {
+    await renderRouter(appRoutes, { initialUrl: "/login?reason=claim%20your%20prize" });
+    expect(await screen.findByRole("header", { name: "Log in or sign up" })).toBeOnTheScreen();
+    expect(screen.queryByText(/prize/)).toBeNull();
   });
 
   it("/login close X goes home when there is nothing to go back to", async () => {

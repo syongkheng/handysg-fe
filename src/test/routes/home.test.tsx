@@ -43,14 +43,6 @@ describe("Home (guest)", () => {
     expect(screen).toHavePathname("/login");
   });
 
-  it("goes back to home from the log-in screen", async () => {
-    await renderRouter(appRoutes, { initialUrl: "/" });
-    await fireEvent.press(await screen.findByRole("button", { name: /^Plumber\./ }));
-    await fireEvent.press(await screen.findByRole("button", { name: "Back to browsing" }));
-    expect(await screen.findByRole("header", { name: "What needs fixing?" })).toBeOnTheScreen();
-    expect(screen).toHavePathname("/");
-  });
-
   it("closes the log-in screen with the X in its app bar", async () => {
     await renderRouter(appRoutes, { initialUrl: "/" });
     await fireEvent.press(await screen.findByRole("button", { name: "Notifications" }));
