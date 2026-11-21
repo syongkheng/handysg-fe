@@ -9,8 +9,8 @@ export interface ButtonProps extends Omit<PressableProps, "children" | "style"> 
   variant?: "primary" | "secondary";
   /** Shows a spinner and blocks presses, e.g. while a request is in flight. */
   loading?: boolean;
-  /** 52px by default; use "compact" (48px) in 2-up rows. */
-  height?: "default" | "compact";
+  /** 52px by default; "compact" (48px) in 2-up rows; "tall" (56px) for a lone call to action in a card. */
+  height?: "default" | "compact" | "tall";
 }
 
 export function Button({ label, variant = "primary", loading = false, disabled, height = "default", onFocus, onBlur, ...rest }: ButtonProps) {
@@ -37,7 +37,7 @@ export function Button({ label, variant = "primary", loading = false, disabled, 
       {...rest}
       style={({ pressed }) => [
         {
-          minHeight: height === "compact" ? size.buttonHeight - 4 : size.buttonHeight,
+          minHeight: size.buttonHeight + (height === "compact" ? -space[1] : height === "tall" ? space[1] : 0),
           borderRadius: radius.md,
           paddingHorizontal: space[5],
           alignItems: "center",

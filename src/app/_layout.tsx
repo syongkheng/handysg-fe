@@ -3,7 +3,8 @@ import { DarkTheme, DefaultTheme, Stack, ThemeProvider as NavigationThemeProvide
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useMemo } from "react";
-import { fontAssets, fontFamily, ThemeProvider, useTheme } from "@/theme";
+import { SessionProvider } from "@/auth/SessionProvider";
+import { fontAssets, ThemeProvider, useTheme } from "@/theme";
 
 // Keep the splash screen up until Inter has loaded, so text never flashes in the system font.
 SplashScreen.preventAutoHideAsync();
@@ -20,7 +21,9 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider>
-      <AppStack />
+      <SessionProvider>
+        <AppStack />
+      </SessionProvider>
     </ThemeProvider>
   );
 }
@@ -43,10 +46,16 @@ function AppStack() {
       <Stack
         screenOptions={{
           contentStyle: { backgroundColor: color.bg },
-          headerTitleStyle: { fontFamily: fontFamily(600) },
+          // No native headers anywhere: every page draws its own <AppBar /> (see CLAUDE.md, App rules).
+          headerShown: false,
         }}
       >
-        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="login" options={{ presentation: "modal" }} />
+        <Stack.Screen name="diagnostics" />
+        <Stack.Screen name="privacy" />
+        <Stack.Screen name="data-usage" />
+        <Stack.Screen name="language" />
       </Stack>
     </NavigationThemeProvider>
   );
