@@ -1,7 +1,7 @@
 import { api } from "./client";
 
 /** Mirrors the backend's /auth and /address responses (backend/src/auth/Auth.service.ts). */
-export type OtpPurpose = "VERIFY_EMAIL" | "LOGIN";
+export type OtpPurpose = "VERIFY_EMAIL" | "LOGIN" | "DELETE_ACCOUNT";
 
 export interface OtpChallenge {
   challengeId: string;

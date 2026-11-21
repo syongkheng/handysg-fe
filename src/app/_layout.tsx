@@ -60,6 +60,8 @@ function AppStack() {
         <Stack.Screen name="privacy" />
         <Stack.Screen name="data-usage" />
         <Stack.Screen name="language" />
+        <Stack.Screen name="account/export" />
+        <Stack.Screen name="account/delete" options={{ gestureEnabled: false }} />
       </Stack>
     </NavigationThemeProvider>
   );
