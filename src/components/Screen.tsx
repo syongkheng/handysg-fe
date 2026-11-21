@@ -8,19 +8,24 @@ export interface ScreenProps {
   /** Wrap the content in a ScrollView (default). Turn off for screens that manage their own lists. */
   scroll?: boolean;
   /**
-   * Safe-area edges to pad. Leave out "top" on screens that show a Stack header,
-   * which already clears the notch.
+   * Safe-area edges to pad. With a `header`, "top" is ignored because the header clears the notch.
    */
   edges?: Edge[];
+  /** A top bar (usually <AppBar />) drawn above the content. It clears the notch itself, so "top" is dropped from `edges`. */
+  header?: ReactNode;
+  /** Pinned below the content, outside the scroll area, so it always sits at the bottom (e.g. the app version on Profile). */
+  footer?: ReactNode;
+  /** Space between the screen's direct children. Defaults to space-4; use space-6 or more between separate sections. */
+  gap?: number;
 }
 
 /** A screen's outer frame: color-bg background, safe areas, and the 20px (space-5) side padding. */
-export function Screen({ children, scroll = true, edges = ["top", "bottom", "left", "right"] }: ScreenProps) {
+export function Screen({ children, scroll = true, edges = ["top", "bottom", "left", "right"], header, footer, gap = space[4] }: ScreenProps) {
   const { color } = useTheme();
-  const content = { padding: space[5], gap: space[4] } as const;
+  const content = { padding: space[5], gap } as const;
 
-  return (
-    <SafeAreaView edges={edges} style={{ flex: 1, backgroundColor: color.bg }}>
+  const body = (
+    <SafeAreaView edges={header ? edges.filter((e) => e !== "top") : edges} style={{ flex: 1, backgroundColor: color.bg }}>
       {scroll ? (
         <ScrollView contentContainerStyle={content} keyboardShouldPersistTaps="handled">
           {children}
@@ -28,6 +33,15 @@ export function Screen({ children, scroll = true, edges = ["top", "bottom", "lef
       ) : (
         <View style={[{ flex: 1 }, content]}>{children}</View>
       )}
+      {footer ? <View style={{ paddingHorizontal: space[5] }}>{footer}</View> : null}
     </SafeAreaView>
+  );
+
+  if (!header) return body;
+  return (
+    <View style={{ flex: 1, backgroundColor: color.bg }}>
+      {header}
+      {body}
+    </View>
   );
 }

@@ -55,6 +55,39 @@ describe("Screen", () => {
     expect(JSON.parse(safe.props.accessibilityHint)).toEqual(["bottom"]);
     expect(StyleSheet.flatten(safe.props.style).backgroundColor).toBe(color.dark.bg);
   });
+
+  it("draws a header above the safe area and drops the 'top' edge, which the header clears", async () => {
+    await renderWithTheme(
+      <Screen header={<AppText>Bar</AppText>} edges={["top", "bottom"]}>
+        <AppText>Body</AppText>
+      </Screen>,
+    );
+    expect(screen.getByText("Bar")).toBeOnTheScreen();
+    expect(scrollAncestor(screen.getByText("Bar"))).toBeNull();
+    const safe = screen.getByTestId("safe-area");
+    expect(JSON.parse(safe.props.accessibilityHint)).toEqual(["bottom"]);
+  });
+
+  it("keeps the 'top' edge when there is no header", async () => {
+    await renderWithTheme(
+      <Screen edges={["top", "left"]}>
+        <AppText>Body</AppText>
+      </Screen>,
+    );
+    expect(JSON.parse(screen.getByTestId("safe-area").props.accessibilityHint)).toEqual(["top", "left"]);
+  });
+
+  it("pins the footer outside the scroll area and uses a custom gap", async () => {
+    await renderWithTheme(
+      <Screen footer={<AppText>Version 1.0.0</AppText>} gap={space[6]}>
+        <AppText>Body</AppText>
+      </Screen>,
+    );
+    expect(screen.getByText("Version 1.0.0")).toBeOnTheScreen();
+    expect(scrollAncestor(screen.getByText("Version 1.0.0"))).toBeNull();
+    const scroll = scrollAncestor(screen.getByText("Body"));
+    expect(StyleSheet.flatten(scroll?.props.contentContainerStyle)).toMatchObject({ padding: space[5], gap: space[6] });
+  });
 });
 
 describe("Card", () => {

@@ -1,4 +1,6 @@
 import { fireEvent, screen } from "@testing-library/react-native";
+import { StyleSheet } from "react-native";
+import { size, space } from "@/theme";
 import { renderWithTheme } from "@/test/render";
 import { Button } from "./Button";
 
@@ -25,5 +27,14 @@ describe("Button", () => {
     await fireEvent.press(button);
     expect(onPress).not.toHaveBeenCalled();
     expect(button).toBeBusy();
+  });
+
+  it.each([
+    ["default", undefined, size.buttonHeight],
+    ["compact", "compact" as const, size.buttonHeight - space[1]],
+    ["tall", "tall" as const, size.buttonHeight + space[1]],
+  ])("uses the %s height", async (_name, height, expected) => {
+    await renderWithTheme(<Button label="Go" height={height} onPress={jest.fn()} />);
+    expect(StyleSheet.flatten(screen.getByRole("button", { name: "Go" }).props.style).minHeight).toBe(expected);
   });
 });
