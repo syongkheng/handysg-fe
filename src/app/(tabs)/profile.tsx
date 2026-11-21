@@ -47,6 +47,10 @@ export default function ProfileScreen() {
       </AppText>
       <AppText tone="textMuted">{session.user.username}</AppText>
       <Settings />
+      <SettingsGroup title="Your data">
+        <LinkRow label="Export my data" href="/account/export" />
+        <LinkRow label="Delete account" href="/account/delete" tone="danger" />
+      </SettingsGroup>
       <Button label="Log out" variant="secondary" onPress={signOut} />
     </Screen>
   );

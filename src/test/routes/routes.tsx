@@ -13,6 +13,8 @@ import RegisterPasswordStep from "@/app/(auth)/register/index";
 import RegisterEmailStep from "@/app/(auth)/register/email";
 import RegisterAddressStep from "@/app/(auth)/register/address";
 import VerifyScreen from "@/app/(auth)/verify";
+import ExportScreen from "@/app/account/export";
+import DeleteAccountScreen from "@/app/account/delete";
 import PrivacyScreen from "@/app/privacy";
 import DataUsageScreen from "@/app/data-usage";
 import LanguageScreen from "@/app/language";
@@ -31,6 +33,8 @@ export const appRoutes = {
   "(auth)/register/email": RegisterEmailStep,
   "(auth)/register/address": RegisterAddressStep,
   "(auth)/verify": VerifyScreen,
+  "account/export": ExportScreen,
+  "account/delete": DeleteAccountScreen,
   diagnostics: DiagnosticsScreen,
   privacy: PrivacyScreen,
   "data-usage": DataUsageScreen,
