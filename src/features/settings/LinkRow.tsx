@@ -9,7 +9,7 @@ import { size, space, useTheme } from "@/theme";
  * (e.g. "English") and a chevron on the right. Lives inside a SettingsGroup, which draws
  * the card and the lines between rows.
  */
-export function LinkRow({ label, value, href }: { label: string; value?: string; href: Href }) {
+export function LinkRow({ label, value, href, tone = "text" }: { label: string; value?: string; href: Href; tone?: "text" | "danger" }) {
   const router = useRouter();
   const { color } = useTheme();
   return (
@@ -27,7 +27,7 @@ export function LinkRow({ label, value, href }: { label: string; value?: string;
         backgroundColor: pressed ? color.surfaceMuted : color.surface,
       })}
     >
-      <AppText variant="md" style={{ flex: 1 }}>
+      <AppText variant="md" tone={tone} style={{ flex: 1 }}>
         {label}
       </AppText>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space[2] }}>

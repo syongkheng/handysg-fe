@@ -1,6 +1,7 @@
 import { fireEvent, screen } from "@testing-library/react-native";
 import { StyleSheet } from "react-native";
 import { size, space } from "@/theme";
+import { color } from "@/theme/tokens.generated";
 import { renderWithTheme } from "@/test/render";
 import { Button } from "./Button";
 
@@ -36,5 +37,34 @@ describe("Button", () => {
   ])("uses the %s height", async (_name, height, expected) => {
     await renderWithTheme(<Button label="Go" height={height} onPress={jest.fn()} />);
     expect(StyleSheet.flatten(screen.getByRole("button", { name: "Go" }).props.style).minHeight).toBe(expected);
+  });
+
+  describe('variant "danger"', () => {
+    const btnStyle = (name: string) => StyleSheet.flatten(screen.getByRole("button", { name }).props.style);
+    const labelColor = (name: string) => StyleSheet.flatten(screen.getByText(name).props.style).color;
+
+    it.each([
+      ["light", "light" as const],
+      ["dark", "dark" as const],
+    ])("fills with color-danger and uses color-text-inverse for the label in %s mode", async (_n, preference) => {
+      await renderWithTheme(<Button label="Delete" variant="danger" onPress={jest.fn()} />, { preference });
+      expect(btnStyle("Delete")).toMatchObject({ backgroundColor: color[preference].danger, opacity: 1 });
+      expect(btnStyle("Delete").borderWidth).toBeUndefined();
+      expect(labelColor("Delete")).toBe(color[preference].textInverse);
+    });
+
+    it("is dimmed and ignores presses while disabled", async () => {
+      const onPress = jest.fn();
+      await renderWithTheme(<Button label="Delete" variant="danger" onPress={onPress} disabled />);
+      expect(btnStyle("Delete").opacity).toBe(0.5);
+      await fireEvent.press(screen.getByRole("button", { name: "Delete" }));
+      expect(onPress).not.toHaveBeenCalled();
+    });
+
+    it("is not dimmed while loading, but reports busy", async () => {
+      await renderWithTheme(<Button label="Delete" variant="danger" onPress={jest.fn()} loading />);
+      expect(btnStyle("Delete").opacity).toBe(1);
+      expect(screen.getByRole("button", { name: "Delete" })).toBeBusy();
+    });
   });
 });
