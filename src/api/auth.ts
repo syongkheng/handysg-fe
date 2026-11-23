@@ -28,10 +28,13 @@ export interface AuthTokens {
   user: ApiUser;
 }
 
-/** A Singapore address. Floor and unit go together, or are both left out (landed property). */
+/** A Singapore address. Floor and unit go together: required for a flat, optional for landed property. */
 export interface SgAddress {
   postalCode: string;
+  /** In capitals ("406 ANG MO KIO AVENUE 10"). */
   line1: string;
+  /** Landed property, so floor and unit are optional. Older saved addresses may not have it. */
+  landed?: boolean;
   line2?: string;
   floor?: string;
   unit?: string;
@@ -69,8 +72,15 @@ export const authApi = {
   resendOtp: (challengeId: string) => api.post<OtpChallenge>("/auth/otp/resend", { challengeId }),
   refresh: (refreshToken: string) => api.post<AuthTokens>("/auth/refresh", { refreshToken }),
   logout: (refreshToken: string) => api.post<{ loggedOut: true }>("/auth/logout", { refreshToken }),
-  addAddress: (address: SgAddress, token: string | null) => api.post<SavedAddress>("/address", { address }, { token }),
-  listAddresses: (token: string | null) => api.get<SavedAddress[]>("/address", { token }),
+  /** `label` names the address ("Home", "Office"); the server defaults it to "Home". */
+  addAddress: (address: SgAddress, token: string | null, label?: string) =>
+    api.post<SavedAddress>("/address", label ? { address, label } : { address }, { token }),
+  /** Replaces one of the user's addresses and its label. Jobs already posted keep their own copy. */
+  updateAddress: (id: string, address: SgAddress, label: string, token: string | null) =>
+    api.patch<SavedAddress>(`/address/${encodeURIComponent(id)}`, { address, label }, { token }),
+  listAddresses: (token: string | null, signal?: AbortSignal) => api.get<SavedAddress[]>("/address", { token, signal }),
+  /** Makes this address the default; returns the updated list (default first). */
+  setDefaultAddress: (id: string, token: string | null) => api.post<SavedAddress[]>(`/address/${encodeURIComponent(id)}/default`, undefined, { token }),
   lookupPostalCode: (postalCode: string, signal?: AbortSignal) =>
     api.get<AddressLookup>(`/address/lookup/${encodeURIComponent(postalCode)}`, { signal, timeoutMs: 6000 }),
 };

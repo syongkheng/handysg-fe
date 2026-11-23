@@ -18,6 +18,7 @@ const codeInput = () => screen.findByLabelText("6-digit code");
 
 beforeEach(async () => {
   Object.values(api).forEach((f) => f.mockReset());
+  api.listAddresses.mockResolvedValue([]); // Home and Profile load saved addresses
   (getConnectivity as jest.Mock).mockResolvedValue({ status: "ok", color: "绿", timestamp: "t" });
   await tokenStore.clear();
 });

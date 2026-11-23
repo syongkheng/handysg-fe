@@ -10,6 +10,25 @@ import { ThemeProvider } from "@/theme";
 import { appRoutes } from "./routes";
 
 jest.mock("@/api/connectivity", () => ({ getConnectivity: jest.fn() }));
+// Home and Jobs load the customer's jobs; the booking form loads options and saved addresses.
+jest.mock("@/api/jobs", () => ({
+  jobsApi: {
+    list: jest.fn().mockResolvedValue([]),
+    options: jest.fn().mockResolvedValue({
+      callOutFeeCents: 100,
+      currency: "SGD",
+      timeSlots: [{ id: "MORNING", label: "9am – 12pm" }],
+      dates: [{ date: "2026-11-24", timeSlots: ["MORNING"] }],
+      descriptionMin: 10,
+      descriptionMax: 1000,
+    }),
+    post: jest.fn(),
+  },
+}));
+jest.mock("@/api/auth", () => {
+  const actual = jest.requireActual("@/api/auth");
+  return { ...actual, authApi: { ...actual.authApi, listAddresses: jest.fn().mockResolvedValue([]) } };
+});
 const getConnectivityMock = getConnectivity as jest.MockedFunction<typeof getConnectivity>;
 
 const SIGNED_IN: Session = { status: "signedIn", user: { publicId: "aZ3kP9qL", username: "tan_ah_kow", type: "CUSTOMER" } };
@@ -36,13 +55,24 @@ describe("Signed-in user", () => {
     await renderRouter(signedInRoutes, { initialUrl: "/" });
     expect(await screen.findByText("Hi tan_ah_kow")).toBeOnTheScreen();
     expect(screen.queryByText("Hi there")).toBeNull();
-    expect(screen.getByText("No jobs yet. Pick a trade above to book one.")).toBeOnTheScreen();
+    expect(await screen.findByText("No jobs yet. Pick a trade above to book one.")).toBeOnTheScreen();
     expect(screen.queryByText(/Log in to see your jobs/)).toBeNull();
   });
 
+  it("opens the booking form, not the log-in screen, when they tap a trade", async () => {
+    await renderRouter(signedInRoutes, { initialUrl: "/" });
+    await fireEvent.press(await screen.findByRole("button", { name: /^Plumber\./ }));
+    expect(screen).toHavePathname("/book/plumber");
+    expect(await screen.findByRole("header", { name: "What’s wrong?" })).toBeOnTheScreen();
+  });
+
+  it("opens Your addresses, not the log-in screen, when they tap the address chip", async () => {
+    await renderRouter(signedInRoutes, { initialUrl: "/" });
+    await fireEvent.press(await screen.findByRole("button", { name: "Add your service address" }));
+    expect(screen).toHavePathname("/addresses");
+  });
+
   it.each([
-    ["a trade", /^Plumber\./],
-    ["the address chip", "Add your service address"],
     ["notifications", "Notifications"],
   ])("does not send them to the log-in screen when they tap %s", async (_what, name) => {
     await renderRouter(signedInRoutes, { initialUrl: "/" });
@@ -52,12 +82,12 @@ describe("Signed-in user", () => {
   });
 
   it.each([
-    ["/jobs", "Jobs", "No jobs yet."],
+    ["/jobs", "Jobs", /^No jobs yet\./],
     ["/wallet", "Wallet", "Your wallet is coming soon."],
   ])("%s shows the signed-in view, not the guest prompt", async (url, title, body) => {
     await renderRouter(signedInRoutes, { initialUrl: url });
     expect(await screen.findByRole("header", { name: title })).toBeOnTheScreen();
-    expect(screen.getByText(body)).toBeOnTheScreen();
+    expect(await screen.findByText(body)).toBeOnTheScreen();
     expect(screen.queryByText("You're browsing as a guest")).toBeNull();
   });
 

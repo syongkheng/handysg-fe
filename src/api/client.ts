@@ -15,7 +15,7 @@ interface ErrorBody {
   fieldName?: string;
 }
 
-export type HttpMethod = "GET" | "POST" | "DELETE";
+export type HttpMethod = "GET" | "POST" | "PATCH" | "DELETE";
 
 export interface RequestOptions {
   body?: unknown;
@@ -106,5 +106,6 @@ export async function request<T>(method: HttpMethod, path: string, opts: Request
 export const api = {
   get: <T>(path: string, opts?: Omit<RequestOptions, "body">) => request<T>("GET", path, opts),
   post: <T>(path: string, body?: unknown, opts?: Omit<RequestOptions, "body">) => request<T>("POST", path, { ...opts, body }),
+  patch: <T>(path: string, body?: unknown, opts?: Omit<RequestOptions, "body">) => request<T>("PATCH", path, { ...opts, body }),
   delete: <T>(path: string, opts?: Omit<RequestOptions, "body">) => request<T>("DELETE", path, opts),
 };

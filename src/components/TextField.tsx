@@ -11,10 +11,12 @@ export interface TextFieldProps extends Omit<TextInputProps, "style"> {
   helper?: string;
   /** Password fields: hides the text, with a Show / Hide button inside the field. */
   secureToggle?: boolean;
+  /** Multi-line fields: starting height in input heights (default 3). */
+  rows?: number;
   ref?: Ref<ComponentRef<typeof TextInput>>;
 }
 
-export function TextField({ label, error, helper, secureToggle = false, ref, onFocus, onBlur, editable = true, ...rest }: TextFieldProps) {
+export function TextField({ label, error, helper, secureToggle = false, rows = 3, ref, onFocus, onBlur, editable = true, ...rest }: TextFieldProps) {
   const { color } = useTheme();
   const [focused, setFocused] = useState(false);
   const [revealed, setRevealed] = useState(false);
@@ -45,7 +47,10 @@ export function TextField({ label, error, helper, secureToggle = false, ref, onF
           secureTextEntry={secureToggle ? !revealed : rest.secureTextEntry}
           style={[
             {
-              minHeight: size.inputHeight,
+              // Multi-line fields (a job description) start at `rows` input heights and grow with the text.
+              minHeight: rest.multiline ? size.inputHeight * rows : size.inputHeight,
+              paddingVertical: rest.multiline ? space[3] : undefined,
+              textAlignVertical: rest.multiline ? "top" : "center",
               borderRadius: radius.md,
               borderWidth: 1,
               borderColor: error ? color.danger : focused ? color.primary : color.borderStrong,

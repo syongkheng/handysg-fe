@@ -37,7 +37,10 @@ export const authApiMockFactory = () => ({
     refresh: jest.fn(),
     logout: jest.fn(),
     addAddress: jest.fn(),
-    listAddresses: jest.fn(),
+    updateAddress: jest.fn(),
+    // Home and Profile load saved addresses on every render; default to none (jest.clearAllMocks keeps this).
+    listAddresses: jest.fn(() => Promise.resolve([])),
+    setDefaultAddress: jest.fn(),
     lookupPostalCode: jest.fn(),
   },
 });

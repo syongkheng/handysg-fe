@@ -15,6 +15,9 @@ import RegisterAddressStep from "@/app/(auth)/register/address";
 import VerifyScreen from "@/app/(auth)/verify";
 import ExportScreen from "@/app/account/export";
 import DeleteAccountScreen from "@/app/account/delete";
+import BookScreen from "@/app/book/[trade]";
+import AddressesScreen from "@/app/addresses";
+import JobDetailScreen from "@/app/job/[id]";
 import PrivacyScreen from "@/app/privacy";
 import DataUsageScreen from "@/app/data-usage";
 import LanguageScreen from "@/app/language";
@@ -35,6 +38,9 @@ export const appRoutes = {
   "(auth)/verify": VerifyScreen,
   "account/export": ExportScreen,
   "account/delete": DeleteAccountScreen,
+  "book/[trade]": BookScreen,
+  addresses: AddressesScreen,
+  "job/[id]": JobDetailScreen,
   diagnostics: DiagnosticsScreen,
   privacy: PrivacyScreen,
   "data-usage": DataUsageScreen,

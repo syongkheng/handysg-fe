@@ -100,6 +100,18 @@ describe("TextField", () => {
     expect(screen.getByLabelText("PIN").props.secureTextEntry).toBe(true);
   });
 
+  it("multi-line fields start 3 input heights tall by default, or `rows` heights, with text at the top", async () => {
+    await renderWithTheme(<TextField label="Notes" multiline />);
+    expect(inputStyle("Notes")).toMatchObject({ minHeight: size.inputHeight * 3, textAlignVertical: "top" });
+    await renderWithTheme(<TextField label="Problem" multiline rows={2} />);
+    expect(inputStyle("Problem").minHeight).toBe(size.inputHeight * 2);
+  });
+
+  it("ignores `rows` on a single-line field", async () => {
+    await renderWithTheme(<TextField label="Name" rows={4} />);
+    expect(inputStyle("Name")).toMatchObject({ minHeight: size.inputHeight, textAlignVertical: "center" });
+  });
+
   it("forwards ref to the underlying TextInput so screens can focus it", async () => {
     const ref = createRef<ComponentRef<typeof TextInput>>();
     await renderWithTheme(<TextField label="Password" ref={ref} />);

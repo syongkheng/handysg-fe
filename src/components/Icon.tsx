@@ -34,6 +34,8 @@ const glyphs = {
     </>
   ),
   plus: <Path d="M12 5v14M5 12h14" />,
+  /** Edit (pencil) */
+  edit: <Path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z" />,
   home: <Path d="M3 10l9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />,
   jobs: (
     <>
@@ -86,6 +88,53 @@ const glyphs = {
     <>
       <Circle cx="12" cy="12" r="9" />
       <Path d="M12 8v4M12 16h.01" />
+    </>
+  ),
+  // Job issue tiles (Feather shapes).
+  /** Blocked drain (funnel) */
+  filter: <Path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />,
+  /** Pressure / flow */
+  activity: <Path d="M22 12h-4l-3 9L9 3l-3 9H2" />,
+  /** Water heater */
+  thermometer: <Path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z" />,
+  /** Tap or shower */
+  shower: <Path d="M8 19v2M8 13v2M16 19v2M16 13v2M12 21v2M12 15v2M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25" />,
+  /** Power trips */
+  power: <Path d="M18.36 6.64a9 9 0 1 1-12.73 0M12 2v10" />,
+  /** Lights */
+  sun: (
+    <>
+      <Circle cx="12" cy="12" r="5" />
+      <Path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+    </>
+  ),
+  /** Socket or switch */
+  toggle: (
+    <>
+      <Rect x="1" y="5" width="22" height="14" rx="7" />
+      <Circle cx="8" cy="12" r="3" />
+    </>
+  ),
+  /** New installation */
+  tool: <Path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />,
+  /** Digital lock (keypad) */
+  grid: (
+    <>
+      <Rect x="3" y="3" width="7" height="7" rx="1" />
+      <Rect x="14" y="3" width="7" height="7" rx="1" />
+      <Rect x="14" y="14" width="7" height="7" rx="1" />
+      <Rect x="3" y="14" width="7" height="7" rx="1" />
+    </>
+  ),
+  /** Change a lock */
+  refresh: <Path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />,
+  /** Gate or grille */
+  gate: <Path d="M4 21V5M10 21V5M14 21V5M20 21V5M2 9h20M2 17h20" />,
+  /** Calendar (review: when) */
+  calendar: (
+    <>
+      <Rect x="3" y="4" width="18" height="18" rx="2" />
+      <Path d="M16 2v4M8 2v4M3 10h18" />
     </>
   ),
 } satisfies Record<string, ReactNode>;

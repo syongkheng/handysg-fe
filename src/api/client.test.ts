@@ -130,6 +130,16 @@ describe("request", () => {
     expect(init.body).toBe(JSON.stringify({ address: { postalCode: "560123" } }));
   });
 
+  it("sends PATCH with a JSON body and the token", async () => {
+    respond(200, { data: { id: "Jb12abCD" } });
+    await expect(api.patch("/jobs/Jb12abCD", { description: "New" }, { token: "access-abc" })).resolves.toEqual({ id: "Jb12abCD" });
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("http://api.test/jobs/Jb12abCD");
+    expect(init.method).toBe("PATCH");
+    expect(init.body).toBe(JSON.stringify({ description: "New" }));
+    expect(init.headers).toMatchObject({ Authorization: "Bearer access-abc", "Content-Type": "application/json" });
+  });
+
   it.each([
     ["no token option", undefined],
     ["a null token (signed out)", null],

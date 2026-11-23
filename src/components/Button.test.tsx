@@ -67,4 +67,41 @@ describe("Button", () => {
       expect(screen.getByRole("button", { name: "Delete" })).toBeBusy();
     });
   });
+
+  describe('variant "warning"', () => {
+    const btnStyle = (name: string) => StyleSheet.flatten(screen.getByRole("button", { name }).props.style);
+    const labelColor = (name: string) => StyleSheet.flatten(screen.getByText(name).props.style).color;
+
+    it.each([
+      ["light", "light" as const],
+      ["dark", "dark" as const],
+    ])("fills with color-warning (amber, not red) and uses color-text-inverse for the label in %s mode", async (_n, preference) => {
+      await renderWithTheme(<Button label="Cancel job" variant="warning" onPress={jest.fn()} />, { preference });
+      expect(btnStyle("Cancel job")).toMatchObject({ backgroundColor: color[preference].warning, opacity: 1 });
+      expect(btnStyle("Cancel job").backgroundColor).not.toBe(color[preference].danger);
+      expect(btnStyle("Cancel job").borderWidth).toBeUndefined();
+      expect(labelColor("Cancel job")).toBe(color[preference].textInverse);
+    });
+
+    it("calls onPress", async () => {
+      const onPress = jest.fn();
+      await renderWithTheme(<Button label="Cancel job" variant="warning" onPress={onPress} />);
+      await fireEvent.press(screen.getByRole("button", { name: "Cancel job" }));
+      expect(onPress).toHaveBeenCalledTimes(1);
+    });
+
+    it("is dimmed and ignores presses while disabled", async () => {
+      const onPress = jest.fn();
+      await renderWithTheme(<Button label="Cancel job" variant="warning" onPress={onPress} disabled />);
+      expect(btnStyle("Cancel job").opacity).toBe(0.5);
+      await fireEvent.press(screen.getByRole("button", { name: "Cancel job" }));
+      expect(onPress).not.toHaveBeenCalled();
+    });
+
+    it("is not dimmed while loading, but reports busy", async () => {
+      await renderWithTheme(<Button label="Cancel job" variant="warning" onPress={jest.fn()} loading />);
+      expect(btnStyle("Cancel job").opacity).toBe(1);
+      expect(screen.getByRole("button", { name: "Cancel job" })).toBeBusy();
+    });
+  });
 });
