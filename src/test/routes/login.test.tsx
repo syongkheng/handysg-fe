@@ -23,6 +23,7 @@ async function enterUsername(name: string) {
 beforeEach(async () => {
   jest.clearAllMocks();
   Object.values(api).forEach((f) => f.mockReset());
+  api.listAddresses.mockResolvedValue([]); // Home and Profile load saved addresses
   api.logout.mockResolvedValue({ loggedOut: true });
   (getConnectivity as jest.Mock).mockResolvedValue({ status: "ok", color: "绿", timestamp: "t" });
   await tokenStore.clear();

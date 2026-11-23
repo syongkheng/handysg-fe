@@ -62,6 +62,10 @@ function AppStack() {
         <Stack.Screen name="language" />
         <Stack.Screen name="account/export" />
         <Stack.Screen name="account/delete" options={{ gestureEnabled: false }} />
+        {/* Post a job: a modal over Home, like the wireframe's full-screen booking sheet. */}
+        <Stack.Screen name="book/[trade]" options={{ presentation: "modal" }} />
+        <Stack.Screen name="job/[id]" />
+        <Stack.Screen name="addresses" />
       </Stack>
     </NavigationThemeProvider>
   );

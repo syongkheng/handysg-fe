@@ -52,6 +52,7 @@ const confirmButton = () => screen.getByRole("button", { name: "Delete my accoun
 beforeEach(async () => {
   jest.clearAllMocks();
   Object.values(auth).forEach((f) => f.mockReset());
+  auth.listAddresses.mockResolvedValue([]); // Profile loads saved addresses
   Object.values(account).forEach((f) => f.mockReset());
   auth.logout.mockResolvedValue({ loggedOut: true });
   (getConnectivity as jest.Mock).mockResolvedValue({ status: "ok", color: "绿", timestamp: "t" });

@@ -15,12 +15,14 @@ export interface ScreenProps {
   header?: ReactNode;
   /** Pinned below the content, outside the scroll area, so it always sits at the bottom (e.g. the app version on Profile). */
   footer?: ReactNode;
+  /** Draw the footer edge to edge, without the side padding (a bottom action bar with its own background and border). */
+  footerFlush?: boolean;
   /** Space between the screen's direct children. Defaults to space-4; use space-6 or more between separate sections. */
   gap?: number;
 }
 
 /** A screen's outer frame: color-bg background, safe areas, and the 20px (space-5) side padding. */
-export function Screen({ children, scroll = true, edges = ["top", "bottom", "left", "right"], header, footer, gap = space[4] }: ScreenProps) {
+export function Screen({ children, scroll = true, edges = ["top", "bottom", "left", "right"], header, footer, footerFlush = false, gap = space[4] }: ScreenProps) {
   const { color } = useTheme();
   const content = { padding: space[5], gap } as const;
 
@@ -33,7 +35,7 @@ export function Screen({ children, scroll = true, edges = ["top", "bottom", "lef
       ) : (
         <View style={[{ flex: 1 }, content]}>{children}</View>
       )}
-      {footer ? <View style={{ paddingHorizontal: space[5] }}>{footer}</View> : null}
+      {footer ? footerFlush ? footer : <View style={{ paddingHorizontal: space[5] }}>{footer}</View> : null}
     </SafeAreaView>
   );
 

@@ -1,12 +1,26 @@
+import type { ReactNode } from "react";
 import { Pressable, View } from "react-native";
 import { AppText } from "@/components";
 import { radius, size, space, useTheme } from "@/theme";
 
 /**
  * Design system "Option card": title text-base/600 over a hint text-xs muted; selected = 2px primary
- * border on primary-subtle. Used as a radio inside a radiogroup.
+ * border on primary-subtle. Used as a radio inside a radiogroup. `trailing` goes on the right, e.g. an
+ * edit pencil (its own button, separate from selecting the card).
  */
-export function OptionCard({ title, hint, selected, onPress }: { title: string; hint: string; selected: boolean; onPress: () => void }) {
+export function OptionCard({
+  title,
+  hint,
+  selected,
+  onPress,
+  trailing,
+}: {
+  title: string;
+  hint: string;
+  selected: boolean;
+  onPress: () => void;
+  trailing?: ReactNode;
+}) {
   const { color } = useTheme();
   return (
     <Pressable
@@ -47,6 +61,7 @@ export function OptionCard({ title, hint, selected, onPress }: { title: string; 
           {hint}
         </AppText>
       </View>
+      {trailing}
     </Pressable>
   );
 }

@@ -88,6 +88,22 @@ describe("Screen", () => {
     const scroll = scrollAncestor(screen.getByText("Body"));
     expect(StyleSheet.flatten(scroll?.props.contentContainerStyle)).toMatchObject({ padding: space[5], gap: space[6] });
   });
+
+  it("pads the footer by default, and draws it edge to edge with footerFlush", async () => {
+    await renderWithTheme(
+      <Screen footer={<AppText>Padded</AppText>}>
+        <AppText>Body</AppText>
+      </Screen>,
+    );
+    expect(StyleSheet.flatten(screen.getByText("Padded").parent?.props.style)).toMatchObject({ paddingHorizontal: space[5] });
+    await renderWithTheme(
+      <Screen footer={<AppText>Flush</AppText>} footerFlush>
+        <AppText>Body</AppText>
+      </Screen>,
+    );
+    // The footer is a direct child of the safe area, with no padded wrapper.
+    expect(screen.getByText("Flush").parent).toBe(screen.getByTestId("safe-area"));
+  });
 });
 
 describe("Card", () => {

@@ -67,7 +67,7 @@ export default function ExportScreen() {
             </View>
 
             <Notice tone="info" title="This can take a while">
-              We’ll email the file to your verified email address when it’s ready. You can request one export every 24 hours.
+              We’ll email the file to your verified email address when it’s ready. If you’ve requested one recently, you’ll need to wait a while before asking for another.
             </Notice>
 
             {error ? <Notice title="Couldn’t start the export">{error}</Notice> : null}

@@ -1,7 +1,5 @@
 import { Stack } from "expo-router";
-import type { ReactNode } from "react";
-import { Platform } from "react-native";
-import { SafeAreaInsetsContext, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SheetInsets } from "@/components/SheetInsets";
 import { RegisterDraftProvider } from "@/features/auth/RegisterDraft";
 import { useTheme } from "@/theme";
 
@@ -22,15 +20,4 @@ export default function AuthLayout() {
       </RegisterDraftProvider>
     </SheetInsets>
   );
-}
-
-/**
- * On iOS the modal is a sheet that already starts below the status bar, so the App bar must not
- * add the notch inset on top (it would leave an empty band above the title). Android shows the
- * modal full screen, so it keeps the inset.
- */
-function SheetInsets({ children }: { children: ReactNode }) {
-  const insets = useSafeAreaInsets();
-  if (Platform.OS !== "ios") return <>{children}</>;
-  return <SafeAreaInsetsContext.Provider value={{ ...insets, top: 0 }}>{children}</SafeAreaInsetsContext.Provider>;
 }

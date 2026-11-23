@@ -1,5 +1,5 @@
 import { fireEvent, screen } from "@testing-library/react-native";
-import { StyleSheet } from "react-native";
+import { Pressable, StyleSheet, Text } from "react-native";
 import { renderWithTheme } from "@/test/render";
 import { color } from "@/theme/tokens.generated";
 import { OptionCard } from "./OptionCard";
@@ -32,5 +32,33 @@ describe("OptionCard", () => {
       borderColor: color.light.border,
       backgroundColor: color.light.surface,
     });
+  });
+
+  it("renders `trailing` inside the card; pressing it runs its own handler, not the card's", async () => {
+    const onPress = jest.fn();
+    const onEdit = jest.fn();
+    await renderWithTheme(
+      <OptionCard
+        title="Home"
+        hint="406 ANG MO KIO AVENUE 10"
+        selected={false}
+        onPress={onPress}
+        trailing={
+          <Pressable accessibilityRole="button" accessibilityLabel="Edit Home" onPress={onEdit}>
+            <Text>pencil</Text>
+          </Pressable>
+        }
+      />,
+    );
+    const radio = screen.getByRole("radio", { name: /^Home\. 406 ANG MO KIO AVENUE 10/ });
+    expect(radio).toContainElement(screen.getByRole("button", { name: "Edit Home" }));
+    await fireEvent.press(screen.getByRole("button", { name: "Edit Home" }));
+    expect(onEdit).toHaveBeenCalledTimes(1);
+    expect(onPress).not.toHaveBeenCalled();
+  });
+
+  it("renders nothing extra without `trailing`", async () => {
+    await renderWithTheme(<OptionCard title="Home" hint="h" selected={false} onPress={jest.fn()} />);
+    expect(screen.queryByRole("button")).toBeNull();
   });
 });

@@ -8,8 +8,8 @@ describe("knownReason", () => {
     },
   );
 
-  it("includes one 'book …' reason per trade", () => {
-    expect(LOGIN_REASONS.filter((r) => r.startsWith("book "))).toEqual(["book a plumber", "book an electrician", "book a locksmith"]);
+  it("includes one 'book …' reason per trade, plus the general 'book a job'", () => {
+    expect(LOGIN_REASONS.filter((r) => r.startsWith("book "))).toEqual(["book a plumber", "book an electrician", "book a locksmith", "book a job"]);
   });
 
   it.each([

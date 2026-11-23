@@ -3,12 +3,16 @@ import { useRouter } from "expo-router";
 import { View } from "react-native";
 import { useSession } from "@/auth/SessionProvider";
 import { useRequireAuth } from "@/auth/useRequireAuth";
-import { AppText, Screen, Section } from "@/components";
+import { AppText, Screen, Section, TextLink } from "@/components";
 import { IconButton } from "@/components/IconButton";
 import { SignInPrompt } from "@/features/auth/SignInPrompt";
 import { AddressChip } from "@/features/home/AddressChip";
 import { LAUNCH_PROMO, PromoBanner } from "@/features/home/PromoBanner";
 import { TradeTiles } from "@/features/home/TradeTiles";
+import { useAddresses } from "@/features/address/useAddresses";
+import { formatAddress } from "@/features/jobs/jobFormat";
+import { JobRow } from "@/features/jobs/JobRow";
+import { useMyJobs } from "@/features/jobs/useMyJobs";
 import { space } from "@/theme";
 
 /**
@@ -21,6 +25,8 @@ export default function HomeScreen() {
   const router = useRouter();
   const signedIn = session.status === "signedIn";
   const [promoClosed, setPromoClosed] = useState(false);
+  const addresses = useAddresses();
+  const defaultAddress = addresses.status === "done" ? (addresses.addresses.find((a) => a.isDefault) ?? addresses.addresses[0]) : undefined;
 
   return (
     <Screen edges={["top", "left", "right"]} gap={space[6]}>
@@ -41,14 +47,18 @@ export default function HomeScreen() {
           <IconButton icon="bell" label="Notifications" onPress={() => requireAuth("see your notifications", () => {})} />
         </View>
         <View style={{ gap: space[3] }}>
-          <AddressChip onPress={() => requireAuth("save your service address", () => {})} />
-          <TradeTiles onSelect={(trade) => requireAuth(`book ${trade.withArticle}`, () => {})} />
+          <AddressChip address={defaultAddress ? formatAddress(defaultAddress) : undefined} onPress={() => requireAuth("save your service address", () => router.push("/addresses"))} />
+          <TradeTiles
+            onSelect={(trade) =>
+              requireAuth(`book ${trade.withArticle}`, () => router.push({ pathname: "/book/[trade]", params: { trade: trade.id.toLowerCase() } }))
+            }
+          />
         </View>
       </View>
 
       <Section title="Your jobs">
         {signedIn ? (
-          <AppText tone="textMuted">No jobs yet. Pick a trade above to book one.</AppText>
+          <RecentJobs />
         ) : (
           <SignInPrompt
             title="Track your jobs"
@@ -58,5 +68,28 @@ export default function HomeScreen() {
         )}
       </Section>
     </Screen>
+  );
+}
+
+/** Home shows the latest few jobs; the Jobs tab has them all. */
+const RECENT_JOBS = 3;
+
+function RecentJobs() {
+  const router = useRouter();
+  const jobs = useMyJobs();
+  if (jobs.status === "loading") return <AppText tone="textMuted">Loading your jobs…</AppText>;
+  if (jobs.status === "error") return <AppText tone="textMuted">{jobs.message}</AppText>;
+  if (jobs.jobs.length === 0) return <AppText tone="textMuted">No jobs yet. Pick a trade above to book one.</AppText>;
+  return (
+    <View style={{ gap: space[2] }}>
+      {jobs.jobs.slice(0, RECENT_JOBS).map((job) => (
+        <JobRow key={job.id} job={job} onPress={() => router.push({ pathname: "/job/[id]", params: { id: job.id } })} />
+      ))}
+      {jobs.jobs.length > RECENT_JOBS ? (
+        <View style={{ alignItems: "flex-start" }}>
+          <TextLink label="See all jobs" onPress={() => router.push("/jobs")} />
+        </View>
+      ) : null}
+    </View>
   );
 }

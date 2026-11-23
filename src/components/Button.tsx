@@ -5,8 +5,12 @@ import { AppText } from "./AppText";
 
 export interface ButtonProps extends Omit<PressableProps, "children" | "style"> {
   label: string;
-  /** One primary button per screen (design system rule). "danger" is for destructive actions only (deleting an account). */
-  variant?: "primary" | "secondary" | "danger";
+  /**
+   * One primary button per screen (design system rule). "warning" (amber) is for risky actions that
+   * can be recovered from (cancelling a job); "danger" (red) only for destructive ones that can't be
+   * undone (deleting an account).
+   */
+  variant?: "primary" | "secondary" | "warning" | "danger";
   /** Shows a spinner and blocks presses, e.g. while a request is in flight. */
   loading?: boolean;
   /** 52px by default; "compact" (48px) in 2-up rows; "tall" (56px) for a lone call to action in a card. */
@@ -28,8 +32,10 @@ export function Button({
   const inactive = !!disabled || loading;
   const primary = variant === "primary";
   const danger = variant === "danger";
-  // Danger uses text-inverse: white on light mode's dark red, near-black on dark mode's lighter red (keeps 4.5:1).
-  const fg = primary ? color.onPrimary : danger ? color.textInverse : color.text;
+  const warning = variant === "warning";
+  // Danger and warning use text-inverse: white on light mode's dark red / amber, near-black on dark mode's
+  // lighter red / amber (keeps 4.5:1 or more).
+  const fg = primary ? color.onPrimary : danger || warning ? color.textInverse : color.text;
 
   return (
     <Pressable
@@ -57,8 +63,8 @@ export function Button({
         },
         primary
           ? { backgroundColor: pressed ? color.primaryHover : color.primary }
-          : danger
-            ? { backgroundColor: color.danger, opacity: pressed ? 0.85 : disabled && !loading ? 0.5 : 1 }
+          : danger || warning
+            ? { backgroundColor: danger ? color.danger : color.warning, opacity: pressed ? 0.85 : disabled && !loading ? 0.5 : 1 }
             : { backgroundColor: pressed ? color.surfaceMuted : color.surface, borderWidth: 1, borderColor: color.borderStrong },
         focused && { outlineStyle: "solid", outlineWidth: 3, outlineColor: color.focusRing, outlineOffset: 0 },
       ]}

@@ -13,6 +13,8 @@ export const LOGIN_REASONS: readonly string[] = [
   "see your jobs and quotes",
   "see your wallet and credits",
   "manage your account and addresses",
+  "manage your addresses",
+  "book a job",
 ];
 
 export function knownReason(reason: unknown): string | undefined {

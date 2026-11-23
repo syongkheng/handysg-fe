@@ -1,6 +1,7 @@
 import { View } from "react-native";
 import { useSession, useSessionActions } from "@/auth/SessionProvider";
 import { AppText, Button, Screen } from "@/components";
+import { useAddresses } from "@/features/address/useAddresses";
 import { GuestTab } from "@/features/auth/GuestTab";
 import { AppearancePicker } from "@/features/settings/AppearancePicker";
 import { AppVersion } from "@/features/settings/AppVersion";
@@ -31,6 +32,8 @@ function Settings() {
 export default function ProfileScreen() {
   const session = useSession();
   const { signOut } = useSessionActions();
+  const addresses = useAddresses();
+  const addressCount = addresses.status === "done" ? (addresses.addresses.length === 0 ? "None yet" : `${addresses.addresses.length} saved`) : undefined;
   if (session.status === "guest") {
     // The version is pinned to the bottom of the screen (7 quick taps open the hidden Diagnostics page).
     return (
@@ -47,6 +50,9 @@ export default function ProfileScreen() {
       </AppText>
       <AppText tone="textMuted">{session.user.username}</AppText>
       <Settings />
+      <SettingsGroup title="Addresses">
+        <LinkRow label="Your addresses" value={addressCount} href="/addresses" />
+      </SettingsGroup>
       <SettingsGroup title="Your data">
         <LinkRow label="Export my data" href="/account/export" />
         <LinkRow label="Delete account" href="/account/delete" tone="danger" />
