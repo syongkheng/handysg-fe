@@ -15,6 +15,8 @@ export const LOGIN_REASONS: readonly string[] = [
   "manage your account and addresses",
   "manage your addresses",
   "book a job",
+  // After the session expired (SessionProvider): "Log in to continue".
+  "continue",
 ];
 
 export function knownReason(reason: unknown): string | undefined {

@@ -213,3 +213,83 @@ describe("Log in: full flow", () => {
     await expect(tokenStore.get()).resolves.toBeNull();
   });
 });
+
+describe("Log in: after the session expired", () => {
+  it("shows the expired notice and 'Log in to continue' when opened by SessionProvider", async () => {
+    await renderRouter(appRoutes, { initialUrl: "/login?reason=continue&expired=1" });
+    expect(await screen.findByText("Your session has expired")).toBeOnTheScreen();
+    expect(screen.getByText("For your security, please log in again to continue.")).toBeOnTheScreen();
+    expect(screen.getByRole("header", { name: "Log in to continue" })).toBeOnTheScreen();
+    expect(usernameField()).toBeOnTheScreen();
+  });
+
+  it("keeps the notice on the password step", async () => {
+    api.identify.mockResolvedValue({ exists: true });
+    await renderRouter(appRoutes, { initialUrl: "/login?reason=continue&expired=1" });
+    await enterUsername("tan_ah_kow");
+    expect(await screen.findByLabelText("Password")).toBeOnTheScreen();
+    expect(screen.getByText("Your session has expired")).toBeOnTheScreen();
+  });
+
+  it.each([
+    ["no expired param", "/login?reason=continue"],
+    ["expired=0", "/login?expired=0"],
+    ["expired=true (only '1' counts)", "/login?expired=true"],
+  ])("shows no notice with %s", async (_what, url) => {
+    await renderRouter(appRoutes, { initialUrl: url });
+    expect(await screen.findByLabelText("Username")).toBeOnTheScreen();
+    expect(screen.queryByText("Your session has expired")).toBeNull();
+  });
+
+  it("a plain log-in shows neither the notice nor 'Log in to continue'", async () => {
+    await renderRouter(appRoutes, { initialUrl: "/login" });
+    expect(await screen.findByRole("header", { name: "Log in or sign up" })).toBeOnTheScreen();
+    expect(screen.queryByText("Your session has expired")).toBeNull();
+  });
+
+  it("end to end: a signed-in call that gets a 401 and a refused refresh lands on log-in with the notice", async () => {
+    const fetchMock = jest.fn();
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+    try {
+      // Home loads the customer's jobs through the real API client: the access token has expired.
+      fetchMock.mockResolvedValue({ ok: false, status: 401, json: async () => ({ data: { code: "invalid_access_token", message: "Session expired" } }) });
+      await tokenStore.set("refresh-0");
+      api.refresh
+        .mockResolvedValueOnce(tokens()) // restore on launch
+        .mockRejectedValueOnce(new ApiError(401, "invalid_refresh_token", "Session expired")); // renewal refused
+      await renderRouter(appRoutes, { initialUrl: "/" });
+      expect(await screen.findByText("Your session has expired")).toBeOnTheScreen();
+      expect(screen).toHavePathname("/login");
+      expect(screen.getByRole("header", { name: "Log in to continue" })).toBeOnTheScreen();
+      expect(api.refresh.mock.calls).toEqual([["refresh-0"], ["refresh-1"]]);
+      await expect(tokenStore.get()).resolves.toBeNull();
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+  });
+
+  it("end to end: a renewed session retries the call and stays signed in", async () => {
+    const fetchMock = jest.fn();
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+    try {
+      fetchMock.mockImplementation(async (_url: string, init: RequestInit) => {
+        const auth = (init.headers as Record<string, string>).Authorization;
+        return auth === "Bearer access-2"
+          ? { ok: true, status: 200, json: async () => ({ data: [] }) }
+          : { ok: false, status: 401, json: async () => ({ data: { code: "invalid_access_token", message: "Session expired" } }) };
+      });
+      await tokenStore.set("refresh-0");
+      api.refresh.mockResolvedValueOnce(tokens()).mockResolvedValueOnce(tokens({ accessToken: "access-2", refreshToken: "refresh-2" }));
+      await renderRouter(appRoutes, { initialUrl: "/" });
+      expect(await screen.findByText("No jobs yet. Pick a trade above to book one.")).toBeOnTheScreen();
+      expect(screen.getByText("Hi tan_ah_kow")).toBeOnTheScreen();
+      expect(screen).toHavePathname("/");
+      expect(screen.queryByText("Your session has expired")).toBeNull();
+      await expect(tokenStore.get()).resolves.toBe("refresh-2");
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+  });
+});

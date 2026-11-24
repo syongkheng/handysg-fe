@@ -1,5 +1,5 @@
 import { ApiError, CLIENT_ERROR } from "./ApiError";
-import { api, request } from "./client";
+import { api, request, setSessionRecovery } from "./client";
 
 const fetchMock = jest.fn();
 beforeEach(() => {
@@ -148,5 +148,112 @@ describe("request", () => {
     respond(200, { data: null });
     await api.get("/x", token === undefined ? undefined : { token });
     expect(fetchMock.mock.calls[0][1].headers.Authorization).toBeUndefined();
+  });
+});
+
+describe("request: renewing an expired session on 401", () => {
+  const expired401 = () => respond(401, { code: 401, status: "Unauthorized", data: { code: "invalid_access_token", message: "Session expired" } });
+  const recovery = jest.fn<Promise<string | null>, [string]>();
+  beforeEach(() => {
+    recovery.mockReset();
+    setSessionRecovery(recovery);
+  });
+  afterEach(() => setSessionRecovery(null));
+
+  it("asks for a new token with the rejected one, then retries once with the new token", async () => {
+    expired401();
+    respond(200, { data: ["job"] });
+    recovery.mockResolvedValue("access-new");
+    await expect(api.get("/jobs", { token: "access-old" })).resolves.toEqual(["job"]);
+    expect(recovery).toHaveBeenCalledTimes(1);
+    expect(recovery).toHaveBeenCalledWith("access-old");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[0][1].headers.Authorization).toBe("Bearer access-old");
+    expect(fetchMock.mock.calls[1][1].headers.Authorization).toBe("Bearer access-new");
+    expect(fetchMock.mock.calls[1][0]).toBe("http://api.test/jobs");
+  });
+
+  it("retries with the same method and body", async () => {
+    expired401();
+    respond(200, { data: { id: "Jb12abCD" } });
+    recovery.mockResolvedValue("access-new");
+    await api.patch("/jobs/Jb12abCD", { description: "New" }, { token: "access-old" });
+    const [, retry] = fetchMock.mock.calls[1];
+    expect(retry.method).toBe("PATCH");
+    expect(retry.body).toBe(JSON.stringify({ description: "New" }));
+    expect(retry.headers).toMatchObject({ Authorization: "Bearer access-new", "Content-Type": "application/json" });
+  });
+
+  it("rethrows the original 401 without retrying when the session can't be renewed", async () => {
+    expired401();
+    recovery.mockResolvedValue(null);
+    const err = await caught(api.get("/jobs", { token: "access-old" }));
+    expect(err).toMatchObject({ httpStatus: 401, code: "invalid_access_token" });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("retries only once: a second 401 goes to the caller", async () => {
+    expired401();
+    respond(401, { data: { code: "invalid_access_token", message: "Still no" } });
+    recovery.mockResolvedValue("access-new");
+    const err = await caught(api.get("/jobs", { token: "access-old" }));
+    expect(err).toMatchObject({ httpStatus: 401, message: "Still no" });
+    expect(recovery).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("passes the retry's own failure (e.g. a 404) to the caller", async () => {
+    expired401();
+    respond(404, { data: { code: "not_found", message: "Job not found" } });
+    recovery.mockResolvedValue("access-new");
+    expect(await caught(api.get("/jobs/x", { token: "access-old" }))).toMatchObject({ httpStatus: 404, code: "not_found" });
+  });
+
+  it.each([
+    ["no token option", undefined],
+    ["a null token", null],
+    ["an empty token", ""],
+  ])("doesn't try to renew a 401 on a call sent with %s (e.g. a wrong password)", async (_what, token) => {
+    respond(401, { data: { code: "invalid_login_credentials", message: "Invalid username or password" } });
+    const err = await caught(api.post("/auth/login", { username: "tan" }, token === undefined ? undefined : { token }));
+    expect(err).toMatchObject({ httpStatus: 401, code: "invalid_login_credentials" });
+    expect(recovery).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([403, 400, 404, 500])("doesn't try to renew on a %i", async (status) => {
+    respond(status, { data: { code: "x", message: "nope" } });
+    expect(await caught(api.get("/jobs", { token: "access-old" }))).toMatchObject({ httpStatus: status });
+    expect(recovery).not.toHaveBeenCalled();
+  });
+
+  it("doesn't try to renew on a network error", async () => {
+    fetchMock.mockRejectedValueOnce(new TypeError("Network request failed"));
+    expect(await caught(api.get("/jobs", { token: "access-old" }))).toMatchObject({ httpStatus: 0, code: CLIENT_ERROR.network });
+    expect(recovery).not.toHaveBeenCalled();
+  });
+
+  it("lets a caller's abort through without renewing", async () => {
+    const abortErr = new Error("aborted");
+    fetchMock.mockImplementationOnce((_url: string, init: RequestInit) => (init.signal?.aborted ? Promise.reject(abortErr) : Promise.resolve({})));
+    const controller = new AbortController();
+    controller.abort();
+    await expect(request("GET", "/x", { signal: controller.signal, token: "access-old" })).rejects.toBe(abortErr);
+    expect(recovery).not.toHaveBeenCalled();
+  });
+
+  it("rethrows the 401 as is when no recovery is registered", async () => {
+    setSessionRecovery(null);
+    expired401();
+    expect(await caught(api.get("/jobs", { token: "access-old" }))).toMatchObject({ httpStatus: 401, code: "invalid_access_token" });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("passes on an error thrown by the recovery itself", async () => {
+    expired401();
+    const boom = new Error("secure store unavailable");
+    recovery.mockRejectedValue(boom);
+    await expect(api.get("/jobs", { token: "access-old" })).rejects.toBe(boom);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

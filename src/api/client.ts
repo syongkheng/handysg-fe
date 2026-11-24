@@ -31,6 +31,19 @@ export interface RequestOptions {
 
 export const DEFAULT_TIMEOUT_MS = 15_000;
 
+/**
+ * Renews the session when the access token has expired. SessionProvider registers it: given the
+ * token that was turned down, it returns a fresh access token, or null if the session can't be
+ * renewed (it then signs the user out). Kept here so every API call gets it without each screen
+ * having to handle expiry.
+ */
+type SessionRecovery = (rejectedToken: string) => Promise<string | null>;
+let recoverSession: SessionRecovery | null = null;
+
+export function setSessionRecovery(fn: SessionRecovery | null): void {
+  recoverSession = fn;
+}
+
 const MESSAGES = {
   network: "Can't reach HandySG. Check your connection and try again.",
   timeout: "HandySG is taking too long to respond. Try again.",
@@ -47,6 +60,20 @@ const isErrorBody = (v: unknown): v is ErrorBody =>
  *   const stats = await api.get<Connectivity>("/connectivity");
  */
 export async function request<T>(method: HttpMethod, path: string, opts: RequestOptions = {}): Promise<T> {
+  try {
+    return await send<T>(method, path, opts);
+  } catch (err) {
+    // A signed-in call turned down with 401 (expired or no longer valid access token): renew the
+    // session once and retry with the new token. Everything else, including the retry's own
+    // failure, goes to the caller as is.
+    if (!(err instanceof ApiError) || err.httpStatus !== 401 || !opts.token || !recoverSession) throw err;
+    const fresh = await recoverSession(opts.token);
+    if (!fresh) throw err;
+    return send<T>(method, path, { ...opts, token: fresh });
+  }
+}
+
+async function send<T>(method: HttpMethod, path: string, opts: RequestOptions): Promise<T> {
   const url = `${opts.baseUrl ?? env.apiUrl}${path.startsWith("/") ? path : `/${path}`}`;
 
   const controller = new AbortController();
