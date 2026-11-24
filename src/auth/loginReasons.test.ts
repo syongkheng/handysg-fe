@@ -1,7 +1,7 @@
 import { knownReason, LOGIN_REASONS } from "./loginReasons";
 
 describe("knownReason", () => {
-  it.each(["book a plumber", "book an electrician", "book a locksmith", "see your notifications", "save your service address", "see your jobs"])(
+  it.each(["book a plumber", "book an electrician", "book a locksmith", "see your notifications", "save your service address", "see your jobs", "continue"])(
     "accepts the app's own reason %p",
     (reason) => {
       expect(knownReason(reason)).toBe(reason);
@@ -20,6 +20,8 @@ describe("knownReason", () => {
     ["undefined", undefined],
     ["an array (repeated URL param)", ["book a plumber", "book a plumber"]],
     ["a number", 42],
+    ["a near miss of 'continue' (case)", "Continue"],
+    ["a near miss of 'continue' (padded)", "continue "],
   ])("ignores %s", (_what, reason) => {
     expect(knownReason(reason)).toBeUndefined();
   });

@@ -20,13 +20,17 @@ type Phase = "username" | "password" | "notFound";
  * Identifier-first log-in. Step one asks only for the username:
  *   - it exists  → the password field appears → email code (/verify) → signed in
  *   - it doesn't → offer to create an account with that username (/register)
- * `reason` completes "Log in to …" and is only shown when it's one the app itself sends.
+ * `reason` completes "Log in to …" and is only shown when it's one the app itself sends. `expired=1`
+ * adds a "Your session has expired" notice (sent by SessionProvider when renewing fails).
  */
 export default function LoginScreen() {
   const router = useRouter();
   const close = useCloseAuthFlow();
   const { reset } = useRegisterDraft();
-  const reason = knownReason(useLocalSearchParams<{ reason?: string }>().reason);
+  const params = useLocalSearchParams<{ reason?: string; expired?: string }>();
+  const reason = knownReason(params.reason);
+  // Opened by SessionProvider after the session couldn't be renewed.
+  const expired = params.expired === "1";
 
   const [phase, setPhase] = useState<Phase>("username");
   const [username, setUsername] = useState("");
@@ -93,6 +97,11 @@ export default function LoginScreen() {
 
   return (
     <Screen header={<AppBar title="Log in" action="close" onBack={close} />} gap={space[6]}>
+      {expired ? (
+        <Notice tone="info" title="Your session has expired">
+          For your security, please log in again to continue.
+        </Notice>
+      ) : null}
       <StepHeader icon={phase === "password" ? "lock" : "profile"} title={reason ? `Log in to ${reason}` : "Log in or sign up"}>
         {phase === "password" ? "Enter your password. We’ll then email you a 6-digit code." : "Enter your username to continue."}
       </StepHeader>
