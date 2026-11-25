@@ -1,6 +1,6 @@
 // Route tests live outside src/app/: Expo Router would treat any file there as a screen.
 // The Jobs tab and Home's "Your jobs" list the signed-in customer's jobs and open /job/[id].
-import { fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react-native";
 import { renderRouter } from "expo-router/testing-library";
 import { ApiError } from "@/api/ApiError";
 import { authApi } from "@/api/auth";
@@ -29,6 +29,7 @@ const job = (id: string, description: string, over: Partial<CustomerJob> = {}): 
   callOutFeeCents: 100,
   address: { postalCode: "560406", line1: "406 ANG MO KIO AVENUE 10", floor: "05", unit: "123" },
   createdAt: "2026-11-22T11:48:07.749+08:00",
+  statusChangedAt: "2026-11-22T11:48:07.749+08:00",
   ...over,
 });
 
@@ -75,6 +76,47 @@ describe("Jobs lists: signed in", () => {
     await fireEvent.press(screen.getByRole("button", { name: /^Power trips\./ }));
     expect(screen).toHavePathname("/job/Jb000002");
     expect(await screen.findByRole("header", { name: "Electrician job" })).toBeOnTheScreen();
+  });
+
+  it("the Jobs tab groups live jobs under 'Active' and done/cancelled ones under 'Past', Active first", async () => {
+    jobs.list.mockResolvedValue([
+      job("Jb000001", "Done job.", { status: "COMPLETED" }),
+      job("Jb000002", "Open job."),
+      job("Jb000003", "Cancelled job.", { status: "CANCELLED" }),
+      job("Jb000004", "Accepted job.", { status: "ACCEPTED" }),
+      job("Jb000005", "Quoted job.", { status: "QUOTED" }),
+      job("Jb000006", "Working job.", { status: "IN_PROGRESS" }),
+    ]);
+    await renderRouter(appRoutes, { initialUrl: "/jobs" });
+    const active = await screen.findByRole("header", { name: "Active" });
+    const past = screen.getByRole("header", { name: "Past" });
+    const titles = (header: typeof active) =>
+      within(header.parent!)
+        .getAllByRole("button", { name: /\./ })
+        .map((b) => String(b.props.accessibilityLabel).split(".")[0]);
+    // Each group keeps the order the API returned.
+    expect(titles(active)).toEqual(["Open job", "Accepted job", "Quoted job", "Working job"]);
+    expect(titles(past)).toEqual(["Done job", "Cancelled job"]);
+    const headers = screen.getAllByRole("header").map((h) => h.props.children);
+    expect(headers.indexOf("Active")).toBeLessThan(headers.indexOf("Past"));
+  });
+
+  it("the Jobs tab hides an empty group", async () => {
+    jobs.list.mockResolvedValue([job("Jb000001", "Open job.")]);
+    await renderRouter(appRoutes, { initialUrl: "/jobs" });
+    expect(await screen.findByRole("header", { name: "Active" })).toBeOnTheScreen();
+    expect(screen.queryByRole("header", { name: "Past" })).toBeNull();
+  });
+
+  it("the Jobs tab with only finished jobs shows just 'Past', and its rows still open the job", async () => {
+    const done = job("Jb000009", "Locked out.", { trade: "LOCKSMITH", status: "COMPLETED" });
+    jobs.list.mockResolvedValue([done, job("Jb000008", "Old leak.", { status: "CANCELLED" })]);
+    jobs.get.mockResolvedValue(done);
+    await renderRouter(appRoutes, { initialUrl: "/jobs" });
+    expect(await screen.findByRole("header", { name: "Past" })).toBeOnTheScreen();
+    expect(screen.queryByRole("header", { name: "Active" })).toBeNull();
+    await fireEvent.press(screen.getByRole("button", { name: /^Locked out\./ }));
+    expect(screen).toHavePathname("/job/Jb000009");
   });
 
   it("the Jobs tab with no jobs offers 'Book a job', which goes Home", async () => {

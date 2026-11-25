@@ -81,7 +81,7 @@ function RecentJobs() {
   if (jobs.status === "error") return <AppText tone="textMuted">{jobs.message}</AppText>;
   if (jobs.jobs.length === 0) return <AppText tone="textMuted">No jobs yet. Pick a trade above to book one.</AppText>;
   return (
-    <View style={{ gap: space[2] }}>
+    <View style={{ gap: space[3] }}>
       {jobs.jobs.slice(0, RECENT_JOBS).map((job) => (
         <JobRow key={job.id} job={job} onPress={() => router.push({ pathname: "/job/[id]", params: { id: job.id } })} />
       ))}

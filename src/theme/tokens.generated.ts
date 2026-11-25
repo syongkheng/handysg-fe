@@ -136,6 +136,7 @@ export const size = {
   "tapTarget": 44,
   "buttonHeight": 52,
   "inputHeight": 48,
+  "iconXs": 12,
   "iconSm": 16,
   "iconMd": 20,
   "iconLg": 24
