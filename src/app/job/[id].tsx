@@ -11,7 +11,7 @@ import { SignedInOnly } from "@/features/account/SignedInOnly";
 import { authErrorMessage } from "@/features/auth/authErrors";
 import { Notice } from "@/features/auth/Notice";
 import { AddressPicker } from "@/features/jobs/AddressPicker";
-import { formatAddress, formatFee, formatPostedAt, JOB_STEPS, jobStatusPill, jobStepIndex, tradeName, whenLabel } from "@/features/jobs/jobFormat";
+import { formatAddress, formatFee, formatPostedAt, JOB_STEPS, jobStatusPill, jobStepIndex, jobWaitingFor, tradeName, whenLabel } from "@/features/jobs/jobFormat";
 import { WhenPicker, type WhenValue } from "@/features/jobs/WhenPicker";
 import { radius, size, space, useTheme } from "@/theme";
 
@@ -192,7 +192,7 @@ function JobDetail() {
         </Notice>
       ) : (
         <Card>
-          <Timeline current={jobStepIndex(job.status)} waitingFor={waitingFor(job)} />
+          <Timeline current={jobStepIndex(job.status)} waitingFor={jobWaitingFor(job)} />
           {editable ? (
             <AppText variant="xs" tone="textMuted">
               Once one accepts, the job is locked to them and they send you a quote. Until then, you can edit or cancel it.
@@ -331,23 +331,6 @@ function EditableSection({ title, canEdit, onEdit, children }: { title: string; 
       {children}
     </View>
   );
-}
-
-/** What the next step is waiting on, shown in amber under it. */
-function waitingFor(job: CustomerJob): string | undefined {
-  const trade = tradeName(job.trade).toLowerCase();
-  switch (job.status) {
-    case "OPEN":
-      return `Waiting for a ${trade} to accept`;
-    case "ACCEPTED":
-      return `Waiting for the ${trade}’s quote`;
-    case "QUOTED":
-      return "Waiting for you to approve the quote";
-    case "IN_PROGRESS":
-      return `Waiting for the ${trade} to finish`;
-    default:
-      return undefined;
-  }
 }
 
 /**

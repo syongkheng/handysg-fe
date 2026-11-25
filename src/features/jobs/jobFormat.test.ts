@@ -6,10 +6,14 @@ import {
   formatAddress,
   formatFee,
   formatPostedAt,
+  formatWhen,
   JOB_STEPS,
+  jobStageLabel,
   jobStatusPill,
+  jobStatusTime,
   jobStepIndex,
   jobTitle,
+  jobWaitingFor,
   sgDate,
   TIME_SLOT_LABELS,
   tradeName,
@@ -176,5 +180,96 @@ describe("jobStatusPill", () => {
     ["CANCELLED", "Cancelled", "neutral"],
   ])("%s → %s (%s)", (status, label, tone) => {
     expect(jobStatusPill(status, "PLUMBER")).toEqual({ label, tone });
+  });
+});
+
+describe("formatWhen", () => {
+  it.each([
+    ["2026-11-23T13:05:00+08:00", "today, 1:05pm"],
+    ["2026-11-23T00:05:00+08:00", "today, 12:05am"],
+    ["2026-11-23T12:00:00.000+08:00", "today, 12:00pm"],
+    ["2026-11-22T09:30:00+08:00", "yesterday, 9:30am"],
+    ["2026-11-22T23:59:00+08:00", "yesterday, 11:59pm"],
+    ["2026-11-21T11:48:07.749+08:00", "21 Nov, 11:48am"],
+    ["2026-01-02T08:00:00+08:00", "2 Jan, 8:00am"],
+    ["2025-11-22T11:48:00+08:00", "22 Nov 2025, 11:48am"],
+  ])("%s → %s (Singapore time, now = Mon 23 Nov 2026 10:00)", (iso, expected) => {
+    expect(formatWhen(iso, NOW)).toBe(expected);
+  });
+
+  it("uses Singapore's today, not UTC's", () => {
+    // 20:00 UTC on the 22nd is 04:00 on the 23rd in Singapore.
+    const lateUtc = new Date("2026-11-22T20:00:00Z");
+    expect(formatWhen("2026-11-23T03:00:00+08:00", lateUtc)).toBe("today, 3:00am");
+    expect(formatWhen("2026-11-22T22:00:00+08:00", lateUtc)).toBe("yesterday, 10:00pm");
+  });
+
+  it("handles yesterday across a year end, and shows the year for last year's dates", () => {
+    const newYear = new Date("2027-01-01T02:00:00Z"); // 1 Jan 2027, 10:00 in Singapore
+    expect(formatWhen("2026-12-31T23:00:00+08:00", newYear)).toBe("yesterday, 11:00pm");
+    expect(formatWhen("2026-12-30T15:30:00+08:00", newYear)).toBe("30 Dec 2026, 3:30pm");
+    expect(formatWhen("2027-01-01T09:15:00+08:00", newYear)).toBe("today, 9:15am");
+  });
+
+  it("returns anything it can't parse unchanged", () => {
+    expect(formatWhen("not a date", NOW)).toBe("not a date");
+    expect(formatWhen("", NOW)).toBe("");
+  });
+});
+
+describe("jobStatusTime", () => {
+  it.each<[JobStatus, string]>([
+    ["OPEN", "Since today, 9:05am"],
+    ["ACCEPTED", "Since today, 9:05am"],
+    ["QUOTED", "Since today, 9:05am"],
+    ["IN_PROGRESS", "Since today, 9:05am"],
+    ["COMPLETED", "Done today, 9:05am"],
+    ["CANCELLED", "Cancelled today, 9:05am"],
+  ])("%s → %s", (status, expected) => {
+    expect(jobStatusTime({ status, statusChangedAt: "2026-11-23T09:05:00+08:00" }, NOW)).toBe(expected);
+  });
+
+  it("uses statusChangedAt with the same date rules as formatWhen", () => {
+    expect(jobStatusTime({ status: "CANCELLED", statusChangedAt: "2026-11-20T11:48:00+08:00" }, NOW)).toBe("Cancelled 20 Nov, 11:48am");
+    expect(jobStatusTime({ status: "COMPLETED", statusChangedAt: "2025-03-04T16:00:00+08:00" }, NOW)).toBe("Done 4 Mar 2025, 4:00pm");
+  });
+});
+
+describe("jobWaitingFor", () => {
+  it.each<[JobStatus, string]>([
+    ["OPEN", "Waiting for a plumber to accept"],
+    ["ACCEPTED", "Waiting for the plumber’s quote"],
+    ["QUOTED", "Waiting for you to approve the quote"],
+    ["IN_PROGRESS", "Waiting for the plumber to finish"],
+  ])("%s → %s", (status, expected) => {
+    expect(jobWaitingFor({ status, trade: "PLUMBER" })).toBe(expected);
+  });
+
+  it("names the job's trade", () => {
+    expect(jobWaitingFor({ status: "ACCEPTED", trade: "LOCKSMITH" })).toBe("Waiting for the locksmith’s quote");
+    expect(jobWaitingFor({ status: "IN_PROGRESS", trade: "ELECTRICIAN" })).toBe("Waiting for the electrician to finish");
+  });
+
+  it("uses the right article while open ('an electrician', like the status pill)", () => {
+    expect(jobWaitingFor({ status: "OPEN", trade: "LOCKSMITH" })).toBe("Waiting for a locksmith to accept");
+    expect(jobWaitingFor({ status: "OPEN", trade: "ELECTRICIAN" })).toBe("Waiting for an electrician to accept");
+  });
+
+  it("waits for nothing once done or cancelled", () => {
+    expect(jobWaitingFor({ status: "COMPLETED", trade: "PLUMBER" })).toBeUndefined();
+    expect(jobWaitingFor({ status: "CANCELLED", trade: "PLUMBER" })).toBeUndefined();
+  });
+});
+
+describe("jobStageLabel", () => {
+  it.each<[JobStatus, string]>([
+    ["OPEN", "Step 1 of 4 · Posted"],
+    ["ACCEPTED", "Step 2 of 4 · Accepted"],
+    ["QUOTED", "Step 2 of 4 · Accepted"],
+    ["IN_PROGRESS", "Step 3 of 4 · Quote approved"],
+    ["COMPLETED", "Step 4 of 4 · Done"],
+    ["CANCELLED", "Stopped at step 1 · Posted"],
+  ])("%s → %s", (status, expected) => {
+    expect(jobStageLabel(status)).toBe(expected);
   });
 });

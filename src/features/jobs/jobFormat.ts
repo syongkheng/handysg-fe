@@ -44,6 +44,26 @@ export function formatPostedAt(iso: string): string {
   return `${Number(d)} ${MONTHS[Number(mo) - 1]} ${y}, ${h12}:${mi}${hour < 12 ? "am" : "pm"}`;
 }
 
+/** "2026-11-24T13:05:00+08:00" → "today, 1:05pm", "yesterday, 9:30am", "22 Nov, 11:48am" or "22 Nov 2025, 11:48am". */
+export function formatWhen(iso: string, now: Date = new Date()): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(iso);
+  if (!m) return iso;
+  const [, y, mo, d, h, mi] = m;
+  const hour = Number(h);
+  const time = `${hour % 12 === 0 ? 12 : hour % 12}:${mi}${hour < 12 ? "am" : "pm"}`;
+  const date = `${y}-${mo}-${d}`;
+  if (date === sgDate(0, now)) return `today, ${time}`;
+  if (date === sgDate(-1, now)) return `yesterday, ${time}`;
+  const day = `${Number(d)} ${MONTHS[Number(mo) - 1]}`;
+  return `${y === sgDate(0, now).slice(0, 4) ? day : `${day} ${y}`}, ${time}`;
+}
+
+/** When the job's status last changed, for the progress bubble: "Since today, 1:05pm", "Cancelled 22 Nov, 11:48am", "Done …". */
+export function jobStatusTime(job: Pick<CustomerJob, "status" | "statusChangedAt">, now: Date = new Date()): string {
+  const prefix = job.status === "CANCELLED" ? "Cancelled" : job.status === "COMPLETED" ? "Done" : "Since";
+  return `${prefix} ${formatWhen(job.statusChangedAt, now)}`;
+}
+
 /** The job timeline's steps, and how far a job with this status has got (index of the current step). */
 export const JOB_STEPS = ["Posted", "Accepted", "Quote approved", "Done"] as const;
 export function jobStepIndex(status: JobStatus): number {
@@ -59,6 +79,29 @@ export function jobStepIndex(status: JobStatus): number {
     case "COMPLETED":
       return 3;
   }
+}
+
+/** What the job's next step is waiting on ("Waiting for a plumber to accept"); none once it's done or cancelled. */
+export function jobWaitingFor(job: Pick<CustomerJob, "status" | "trade">): string | undefined {
+  const trade = tradeName(job.trade).toLowerCase();
+  switch (job.status) {
+    case "OPEN":
+      return `Waiting for ${TRADES.find((t) => t.id === job.trade)?.withArticle ?? "a technician"} to accept`;
+    case "ACCEPTED":
+      return `Waiting for the ${trade}’s quote`;
+    case "QUOTED":
+      return "Waiting for you to approve the quote";
+    case "IN_PROGRESS":
+      return `Waiting for the ${trade} to finish`;
+    default:
+      return undefined;
+  }
+}
+
+/** The progress bar's hold label: "Step 1 of 4 · Posted", or "Stopped at step 1 · Posted" once cancelled. */
+export function jobStageLabel(status: JobStatus): string {
+  const i = jobStepIndex(status);
+  return status === "CANCELLED" ? `Stopped at step ${i + 1} · ${JOB_STEPS[i]}` : `Step ${i + 1} of ${JOB_STEPS.length} · ${JOB_STEPS[i]}`;
 }
 
 /** 100 → "S$1.00", 3050 → "S$30.50". */

@@ -60,6 +60,7 @@ const job = (over: Partial<CustomerJob> = {}): CustomerJob => ({
   callOutFeeCents: 100,
   address: HOME,
   createdAt: "2026-11-22T11:48:07.749+08:00",
+  statusChangedAt: "2026-11-22T11:48:07.749+08:00",
   ...over,
 });
 

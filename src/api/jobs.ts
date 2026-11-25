@@ -51,6 +51,8 @@ export interface CustomerJob {
   address: SgAddress;
   /** ISO 8601, Singapore time. */
   createdAt: string;
+  /** When the status last changed (ISO 8601, Singapore time). Same as createdAt until it moves on. */
+  statusChangedAt: string;
 }
 
 /** The signed-in customer's jobs (backend/src/job). Every call needs the access token. */

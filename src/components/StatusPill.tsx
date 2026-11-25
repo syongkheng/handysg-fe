@@ -1,6 +1,7 @@
 import { View } from "react-native";
-import { radius, space, useTheme, type ThemeColors } from "@/theme";
+import { radius, size, space, useTheme, type ThemeColors } from "@/theme";
 import { AppText } from "./AppText";
+import { Icon, type IconName } from "./Icon";
 
 export type PillTone = "success" | "warning" | "danger" | "info" | "neutral";
 
@@ -13,13 +14,16 @@ const toneTokens: Record<PillTone, { bg: keyof ThemeColors; fg: keyof ThemeColor
 };
 
 /** Short status noun on a tinted pill. Always has words, so colour is never the only signal. */
-export function StatusPill({ label, tone = "neutral" }: { label: string; tone?: PillTone }) {
+export function StatusPill({ label, tone = "neutral", icon }: { label: string; tone?: PillTone; icon?: IconName }) {
   const { color } = useTheme();
   const t = toneTokens[tone];
   return (
     <View
       style={{
         alignSelf: "flex-start",
+        flexDirection: "row",
+        alignItems: "center",
+        gap: space[1],
         backgroundColor: color[t.bg],
         borderRadius: radius.full,
         paddingVertical: space[1],
@@ -27,6 +31,7 @@ export function StatusPill({ label, tone = "neutral" }: { label: string; tone?: 
         paddingHorizontal: 10,
       }}
     >
+      {icon ? <Icon name={icon} size={size.iconXs} color={color[t.fg]} /> : null}
       <AppText variant="xs" weight={600} tone={t.fg}>
         {label}
       </AppText>
